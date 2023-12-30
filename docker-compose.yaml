@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  openresty:
+    image: openresty/openresty:jammy
+    container_name: openresty
+    # 时间
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:80"
+      # 端口范围 18200 - 18299
+      - "18200-18299:18200-18299"
+    volumes:
+      - ./conf:/usr/local/openresty/nginx/conf
+      - ./conf.d:/etc/nginx/conf.d
+      # /var/log/nginx/
+      - ./logs:/usr/local/openresty/nginx/logs
+
