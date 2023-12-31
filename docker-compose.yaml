@@ -4,6 +4,7 @@ services:
   openresty:
     image: openresty/openresty:jammy
     container_name: openresty
+    restart: always
     # 时间
     environment:
       TZ: Asia/Shanghai
