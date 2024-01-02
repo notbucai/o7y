@@ -105,12 +105,18 @@ end
 
 function common.writeConfig(filename, content)
     local configPath = common.configPath .. filename;
+    local backupPath = configPath .. '.bak';
+    local backupFile;
     ngx.log(ngx.INFO, string.format("configPath: %s", configPath));
     -- write file
-    local file = io.open(configPath, 'w');
+    local file = io.open(configPath, 'rw');
 
-    if not file then
-        return nil, string.format("Failed to open file: %s", configPath)
+    -- 判断文件是否存在
+    if file then
+        -- 备份文件
+        backupFile = io.open(backupPath, 'w');
+        -- rename
+        os.rename(configPath, backupPath);
     end
 
     file:write(content);
@@ -118,6 +124,11 @@ function common.writeConfig(filename, content)
     file:close();
 
     return function()
+        -- 如果备份文件存在，就恢复
+        if backupFile then
+            backupFile:close();
+            return os.rename(backupPath, configPath);
+        end
         return os.remove(configPath)
     end, nil
 end

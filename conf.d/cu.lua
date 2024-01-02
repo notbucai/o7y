@@ -26,9 +26,9 @@ local pcallStatus, pcallResult = pcall(function()
     local content = bodyData["content"];
 
     -- 写入文件 
-    local removeFile, err = common.writeConfig(name, content);
+    local rollbackFile, err = common.writeConfig(name, content);
 
-    if not removeFile then
+    if not rollbackFile then
         common.result(err, 4)
         return
     end
@@ -41,7 +41,7 @@ local pcallStatus, pcallResult = pcall(function()
     if not status then
         -- 删除文件
         local su, err
-        removeFile()
+        rollbackFile()
         if not suc then
             common.result(err, 2)
             return
@@ -54,7 +54,7 @@ local pcallStatus, pcallResult = pcall(function()
 
     if not reloadStatus then
         -- 删除文件
-        local suc, err = removeFile();
+        local suc, err = rollbackFile();
         if not suc then
             common.result(err, 2)
             return
