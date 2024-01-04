@@ -14,36 +14,39 @@ end
 
 local pcallStatus, pcallResult = pcall(function()
 
-    local bodyData, err = common.getReqConfigData();
-    if not bodyData then
-        common.result(err, 3)
+    local name = args["name"];
+
+    -- check args
+    if not name then
+        common.result('name is empty', 4)
         return
     end
 
-    local name = bodyData["name"];
-    local content = bodyData["content"];
-
-    local removeFile, err = common.writeConfig(name, content);
-
-    if not removeFile then
-        common.result(err, 4)
+    -- 空字符串
+    if name == '' then
+        common.result('name is empty', 4)
         return
     end
-
-    local status, result = common.checkNginx();
-
-    ngx.log(ngx.INFO, string.format("status: %s, result: %s", status, result));
 
     -- 删除文件
-    local suc, err = removeFile();
+    local rollback, err = common.deleteConf(name);
 
-    if not suc then
+    if not rollback then
         common.result(err, 2)
         return
     end
 
-    if not status then
-        common.result(result, 5)
+    -- 重启服务
+    local reloadStatus, reloadResult = common.reloadNginx();
+
+    if not reloadStatus then
+        -- 删除文件
+        local suc, err = rollback();
+        if not suc then
+            common.result(err, 2)
+            return
+        end
+        common.result(string.format("reload nginx failed: %s", reloadResult), 7)
         return
     end
 

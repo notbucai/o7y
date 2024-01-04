@@ -165,4 +165,34 @@ function common.reloadNginx()
     return eStatus, reloadFileResult;
 end
 
+-- delete file
+function common.deleteConf(filename)
+
+    -- 其实就是重命名
+    -- 检查文件是否存在
+    local configPath = common.configPath .. filename;
+    local yyyyMMddHHmmss = os.date("%Y%m%d%H%M%S", os.time());
+    local backupPath = configPath .. '.' .. yyyyMMddHHmmss;
+
+    local file = io.open(configPath, 'r');
+
+    if not file then
+        return nil, string.format("file(%s) not exist", configPath)
+    end
+
+    -- rename
+    file.close();
+    local renameSuc, renameErr  = os.rename(configPath, backupPath);
+
+    if not renameSuc then
+        return nil, string.format("renameErr (%s)", renameErr)
+    end
+
+    return function ()
+        -- 还原
+        return os.rename(backupPath, configPath)
+    end, nil
+end
+
+
 return common;
