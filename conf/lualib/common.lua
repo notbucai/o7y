@@ -2,7 +2,8 @@ local cjson = require "cjson.safe"
 local lock = require "resty.lock"
 
 local common = {
-    configPath = '/etc/nginx/conf.d/'
+    configPath = '/etc/nginx/conf.d/';
+    lockRef = nil
 };
 
 function common.checkNginx()
@@ -33,9 +34,18 @@ function common.result(msg, code, data)
         msg = msg,
         data = data
     }
+    -- unlock
+    common.unlook();
     ngx.say(cjson.encode(result));
     ngx.exit(ngx.HTTP_OK);
     return
+end
+
+function common.unlook()
+    -- unlock
+    if common.lockRef then
+        common.lockRef:unlock()
+    end
 end
 
 function common.lock()
@@ -54,6 +64,8 @@ function common.lock()
     if not elapsed then
         return nil, err
     end
+
+    common.lockRef = lock;
 
     return lock, nil
 

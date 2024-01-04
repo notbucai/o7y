@@ -12,48 +12,37 @@ if not lock then
     common.result(string.format("Failed to acquire the lock: %s", err), 1);
 end
 
-local pcallStatus, pcallResult = pcall(function()
+local bodyData, err = common.getReqConfigData();
+if not bodyData then
+    common.result(err, 3)
+    return
+end
 
-    local bodyData, err = common.getReqConfigData();
-    if not bodyData then
-        common.result(err, 3)
-        return
-    end
+local name = bodyData["name"];
+local content = bodyData["content"];
 
-    local name = bodyData["name"];
-    local content = bodyData["content"];
+local removeFile, err = common.writeConfig(name, content);
 
-    local removeFile, err = common.writeConfig(name, content);
+if not removeFile then
+    common.result(err, 4)
+    return
+end
 
-    if not removeFile then
-        common.result(err, 4)
-        return
-    end
+local status, result = common.checkNginx();
 
-    local status, result = common.checkNginx();
+ngx.log(ngx.INFO, string.format("status: %s, result: %s", status, result));
 
-    ngx.log(ngx.INFO, string.format("status: %s, result: %s", status, result));
+-- 删除文件
+local suc, err = removeFile();
 
-    -- 删除文件
-    local suc, err = removeFile();
+if not suc then
+    common.result(err, 2)
+    return
+end
 
-    if not suc then
-        common.result(err, 2)
-        return
-    end
+if not status then
+    common.result(result, 5)
+    return
+end
 
-    if not status then
-        common.result(result, 5)
-        return
-    end
-
-    common.result("success", 0, result)
-
-end)
-
-ngx.log(ngx.INFO, string.format('pcall result %s, status %s', pcallResult, pcallStatus))
-
--- 解锁
-local unlockOk, unlockErr = lock:unlock()
-
-ngx.log(ngx.INFO, string.format('unlock result %s, status %s', unlockErr, unlockOk))
+common.result("success", 0, result)
