@@ -7,7 +7,7 @@ local common = {
 
 function common.checkNginx()
 
-    local checkPath = '/tmp/exec' -- 创建一个临时文件
+    local checkPath = '/tmp/eheck' -- 创建一个临时文件
     local checkCommand = '/usr/local/openresty/bin/openresty -t 2> ' .. checkPath
 
     ngx.log(ngx.INFO, string.format("checkCommand: %s", checkCommand));
@@ -90,12 +90,25 @@ function common.getReqConfigData()
 
     -- check args
     if not name then
-        -- common.result('name is empty', 4)
         return nil, 'name is empty'
+    end
+
+    -- 空字符串
+    if name == '' then
+        return nil, 'name is empty'
+    end
+
+    if name == 'o7y.conf' then
+        return nil, 'name is not allowed'
     end
 
     -- check content
     if not content then
+        return nil, 'content is empty'
+    end
+
+    -- 空字符串
+    if content == '' then
         return nil, 'content is empty'
     end
 
@@ -105,19 +118,22 @@ end
 
 function common.writeConfig(filename, content)
     local configPath = common.configPath .. filename;
-    local backupPath = configPath .. '.bak';
-    local backupFile;
+    local yyyyMMddHHmmss = os.date("%Y%m%d%H%M%S", os.time());
+    local backupPath = configPath .. '.' .. yyyyMMddHHmmss;
+    local backupFileExist = false;
     ngx.log(ngx.INFO, string.format("configPath: %s", configPath));
     -- write file
-    local file = io.open(configPath, 'rw');
+    local file = io.open(configPath, 'r');
 
     -- 判断文件是否存在
     if file then
-        -- 备份文件
-        backupFile = io.open(backupPath, 'w');
+        backupFileExist = true;
         -- rename
+        file.close();
         os.rename(configPath, backupPath);
     end
+    
+    file = io.open(configPath, 'w');
 
     file:write(content);
 
@@ -125,8 +141,7 @@ function common.writeConfig(filename, content)
 
     return function()
         -- 如果备份文件存在，就恢复
-        if backupFile then
-            backupFile:close();
+        if backupFileExist then
             return os.rename(backupPath, configPath);
         end
         return os.remove(configPath)

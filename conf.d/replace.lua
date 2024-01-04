@@ -40,8 +40,7 @@ local pcallStatus, pcallResult = pcall(function()
 
     if not status then
         -- 删除文件
-        local su, err
-        rollbackFile()
+        local suc, err = rollbackFile()
         if not suc then
             common.result(err, 2)
             return
